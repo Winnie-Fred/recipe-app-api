@@ -1,28 +1,49 @@
-FROM python:3.9-alpine3.13
+FROM python:3.12.2-slim-bookworm
 LABEL maintainer="Winifred Igboama"
 
+ENV PIP_DISABLE_PIP_VERSION_CHECK 1
+ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
 
+ARG APP_USER=appuser
+
+RUN groupadd -r ${APP_USER} && useradd --no-log-init -r -g ${APP_USER} ${APP_USER}
 
 COPY ./requirements.txt /tmp/requirements.txt
 COPY ./requirements.dev.txt /tmp/requirements.dev.txt
-COPY ./app ./app
+COPY --chown=${APP_USER}:${APP_USER} ./app ./app
 
 WORKDIR /app
 EXPOSE 8000
 
 ARG DEV=false
 
-RUN python -m venv /py && \
-    /py/bin/pip install --upgrade pip && \
-    /py/bin/pip install -r /tmp/requirements.txt && \
+ENV VIRTUAL_ENV=/opt/venv
+RUN python3 -m venv $VIRTUAL_ENV
+ENV PATH="$VIRTUAL_ENV/bin:$PATH"
+
+RUN set -ex && \
+    BUILD_DEPS=" \
+    build-essential \
+    python3-dev \
+    postgresql-server-dev-all \
+    " && \
+    apt-get update && \ 
+    apt-get install -y --no-install-recommends libpq-dev && \
+    apt-get install -y --no-install-recommends $BUILD_DEPS && \
+    \
+    pip install --upgrade pip && \
+    \
+    pip install -r /tmp/requirements.txt && \
+    \
     if [ $DEV = "true" ]; \
-        then /py/bin/pip install -r /tmp/requirements.dev.txt;  \
+    then pip install -r /tmp/requirements.dev.txt;  \
     fi &&  \
+    \
+    apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false $BUILD_DEPS && \
     rm -rf /tmp && \
-    adduser --disabled-password --no-create-home django-user
+    rm -rf /var/lib/apt/lists/* && \
+    apt-get clean
 
 
-ENV PATH="/py/bin:$PATH"
-
-USER django-user
+USER ${APP_USER}:${APP_USER}

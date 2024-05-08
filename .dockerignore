@@ -1,16 +1,16 @@
-# Git
-.git
+.git/
 .gitignore
-
-# Docker
+**/.vscode
 .docker
-
-# Python
-app/__pycache/
-app/*/__pycache/
-app/*/*/__pycache/
-app/*/*/*/__pycache/
-
-.env/
+Dockerfile
+**/*.pyc
+**/*.pyo
+**/*.mo
+**/__pycache__/
+.env
 .venv/
 venv/
+**/coverage
+.coverage
+db.sqlite3
+**/*.md
