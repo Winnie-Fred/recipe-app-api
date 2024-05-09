@@ -1,17 +1,15 @@
-version: "3.9"
-
 services:
   web:
     build:
       context: .
       args:
         - DEV=true
+        - "UID=${UID:-1000}"
+        - "GID=${GID:-1000}"
     ports:
       - "8000:8000"
     volumes:
       - ./app:/app
-      - $HOME/.cache/pip-docker/:/root/.cache/pip
-      - $HOME/.apt-cache:/var/cache/apt/archives
     command:
       sh -c "python manage.py wait_for_db &&
             python manage.py migrate &&

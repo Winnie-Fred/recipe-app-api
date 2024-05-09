@@ -5,9 +5,14 @@ ENV PIP_DISABLE_PIP_VERSION_CHECK 1
 ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
 
+ARG UID=1000
+ARG GID=1000
 ARG APP_USER=appuser
 
-RUN groupadd -r ${APP_USER} && useradd --no-log-init -r -g ${APP_USER} ${APP_USER}
+RUN groupadd -g "${GID}" ${APP_USER} \
+    && useradd --no-create-home --no-log-init -u "${UID}" -g "${GID}" ${APP_USER} \
+    && mkdir -p /app \
+    && chown ${APP_USER}:${APP_USER} -R /app
 
 COPY ./requirements.txt /tmp/requirements.txt
 COPY ./requirements.dev.txt /tmp/requirements.dev.txt
@@ -33,7 +38,6 @@ RUN set -ex && \
     apt-get install -y --no-install-recommends $BUILD_DEPS && \
     \
     pip install --upgrade pip && \
-    \
     pip install -r /tmp/requirements.txt && \
     \
     if [ $DEV = "true" ]; \
@@ -46,4 +50,4 @@ RUN set -ex && \
     apt-get clean
 
 
-USER ${APP_USER}:${APP_USER}
+USER ${APP_USER}
